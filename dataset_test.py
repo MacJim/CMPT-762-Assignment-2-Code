@@ -81,9 +81,10 @@ class DatasetTestCase (unittest.TestCase):
         self.assertEqual(len(dataloader), TRAIN_LEN)
 
         for batch_size in range(2, 21):
-            dataloader = DatasetTestCase.get_train_data_loader(batch_size=batch_size, shuffle=False)
-            self.assertGreater(len(dataloader), 0)
-            self.assertEqual(len(dataloader), DatasetTestCase.get_batch_count(TRAIN_LEN, batch_size))
+            with self.subTest(batch_size=batch_size):
+                dataloader = DatasetTestCase.get_train_data_loader(batch_size=batch_size, shuffle=False)
+                self.assertGreater(len(dataloader), 0)
+                self.assertEqual(len(dataloader), DatasetTestCase.get_batch_count(TRAIN_LEN, batch_size))
 
     def test_validation_length(self):
         VALIDATION_LEN = 5000
@@ -97,9 +98,10 @@ class DatasetTestCase (unittest.TestCase):
         self.assertEqual(len(dataloader), VALIDATION_LEN)
 
         for batch_size in range(2, 21):
-            dataloader = DatasetTestCase.get_validation_data_loader(batch_size=batch_size)
-            self.assertGreater(len(dataloader), 0)
-            self.assertEqual(len(dataloader), DatasetTestCase.get_batch_count(VALIDATION_LEN, batch_size))
+            with self.subTest(batch_size=batch_size):
+                dataloader = DatasetTestCase.get_validation_data_loader(batch_size=batch_size)
+                self.assertGreater(len(dataloader), 0)
+                self.assertEqual(len(dataloader), DatasetTestCase.get_batch_count(VALIDATION_LEN, batch_size))
 
     def test_test_length(self):
         TEST_LEN = 10000
@@ -113,9 +115,10 @@ class DatasetTestCase (unittest.TestCase):
         self.assertEqual(len(dataloader), TEST_LEN)
 
         for batch_size in range(2, 21):
-            dataloader = DatasetTestCase.get_test_data_loader(batch_size=batch_size)
-            self.assertGreater(len(dataloader), 0)
-            self.assertEqual(len(dataloader), DatasetTestCase.get_batch_count(TEST_LEN, batch_size))
+            with self.subTest(batch_size=batch_size):
+                dataloader = DatasetTestCase.get_test_data_loader(batch_size=batch_size)
+                self.assertGreater(len(dataloader), 0)
+                self.assertEqual(len(dataloader), DatasetTestCase.get_batch_count(TEST_LEN, batch_size))
 
 
 if __name__ == '__main__':
