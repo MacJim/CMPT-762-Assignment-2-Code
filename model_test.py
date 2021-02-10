@@ -62,6 +62,11 @@ class ModelTestCase (unittest.TestCase):
                 for current_sum in output_sum.tolist():
                     self.assertNotAlmostEqual(current_sum, 1.)
 
+                # Test largest value.
+                _, indices = torch.max(output, -1)
+                self.assertEqual(len(indices.shape), 1)
+                self.assertEqual(indices.shape[0], batch_size)
+
 
 if __name__ == '__main__':
     unittest.main()
