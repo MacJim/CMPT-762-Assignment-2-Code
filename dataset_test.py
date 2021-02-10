@@ -1,5 +1,6 @@
 import unittest
 
+import torch
 from torch.utils import data
 from torchvision import transforms
 
@@ -182,6 +183,59 @@ class DatasetTestCase (unittest.TestCase):
                             self.assertEqual(label.shape[0], batch_size)
 
                             break    # Only test 1 set of tensor.
+
+    # MARK: - Tensor and label values
+    def test_tensor_values(self):
+        image_max_value = None
+        image_min_value = None
+        label_max_value = None
+        label_min_value = None
+
+        batch_size = 8
+        dataloaders = [
+            DatasetTestCase.get_train_data_loader(batch_size=batch_size, shuffle=True),
+            DatasetTestCase.get_validation_data_loader(batch_size=batch_size),
+            DatasetTestCase.get_test_data_loader(batch_size=batch_size),
+        ]
+        for dataloader in dataloaders:
+            with self.subTest(dataloader=dataloader):
+                for image, label in dataloader:
+                    current_image_max = torch.max(image)
+                    current_image_max = current_image_max.item()
+                    current_image_min = torch.min(image)
+                    current_image_min = current_image_min.item()
+                    current_label_max = torch.max(label)
+                    current_label_max = current_label_max.item()
+                    current_label_min = torch.min(label)
+                    current_label_min = current_label_min.item()
+
+                    if (not image_max_value):
+                        image_max_value = current_image_max
+                    else:
+                        image_max_value = max(current_image_max, image_max_value)
+
+                    if (not image_min_value):
+                        image_min_value = current_image_min
+                    else:
+                        image_min_value = min(current_image_min, image_min_value)
+
+                    if (not label_max_value):
+                        label_max_value = current_label_max
+                    else:
+                        label_max_value = max(current_label_max, label_max_value)
+
+                    if (not label_min_value):
+                        label_min_value = current_label_min
+                    else:
+                        label_min_value = min(current_label_min, label_min_value)
+
+        self.assertGreater(image_max_value, 0.99)
+        self.assertGreaterEqual(1.0, image_max_value)
+        self.assertGreater(0.01, image_min_value)
+        self.assertGreaterEqual(image_min_value, 0.0)
+
+        self.assertEqual(label_max_value, 99)
+        self.assertEqual(label_min_value, 0)
 
 
 if __name__ == '__main__':
