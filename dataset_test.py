@@ -60,7 +60,7 @@ class DatasetTestCase (unittest.TestCase):
         dataset = DatasetTestCase.get_test_dataset()
         return data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-    # MARK: - Get batch count
+    # MARK: - Length
     @staticmethod
     def get_batch_count(total_count: int, batch_size: int) -> int:
         batch_count = total_count // batch_size
@@ -68,7 +68,6 @@ class DatasetTestCase (unittest.TestCase):
             batch_count += 1
         return batch_count
 
-    # MARK: - Length
     def test_train_length(self):
         TRAIN_LEN = 45000
 
@@ -119,6 +118,70 @@ class DatasetTestCase (unittest.TestCase):
                 dataloader = DatasetTestCase.get_test_data_loader(batch_size=batch_size)
                 self.assertGreater(len(dataloader), 0)
                 self.assertEqual(len(dataloader), DatasetTestCase.get_batch_count(TEST_LEN, batch_size))
+
+    # MARK: - CUDA tensor
+    @unittest.skip("Too time-consuming.")
+    def test_train_cuda_tensor(self):
+        for batch_size in [1, 4, 8, 16]:
+            with self.subTest(batch_size=batch_size):
+                dataloader = DatasetTestCase.get_train_data_loader(batch_size=batch_size, shuffle=True, num_workers=6)
+                for image, label in dataloader:
+                    with self.subTest(image=image, label=label):
+                        image_cuda = image.cuda()
+                        label_cuda = label.cuda()
+
+    @unittest.skip("Too time-consuming.")
+    def test_validation_cuda_tensor(self):
+        for batch_size in [1, 4, 8, 16]:
+            with self.subTest(batch_size=batch_size):
+                dataloader = DatasetTestCase.get_validation_data_loader(batch_size=batch_size, num_workers=6)
+                for image, label in dataloader:
+                    with self.subTest(image=image, label=label):
+                        image_cuda = image.cuda()
+                        label_cuda = label.cuda()
+
+    @unittest.skip("Too time-consuming.")
+    def test_test_cuda_tensor(self):
+        for batch_size in [1, 4, 8, 16]:
+            with self.subTest(batch_size=batch_size):
+                dataloader = DatasetTestCase.get_test_data_loader(batch_size=batch_size, num_workers=6)
+                for image, label in dataloader:
+                    with self.subTest(image=image, label=label):
+                        image_cuda = image.cuda()
+                        label_cuda = label.cuda()
+
+    # MARK: - Tensor/label shapes
+    INPUT_CHANNELS = 3
+    INPUT_HEIGHT = 32
+    INPUT_WIDTH = 32
+
+    def test_tensor_shapes(self):
+        for batch_size in [1, 4, 8, 16]:
+            with self.subTest(batch_size=batch_size):
+                dataloaders = [
+                    DatasetTestCase.get_train_data_loader(batch_size=batch_size, shuffle=True),
+                    DatasetTestCase.get_validation_data_loader(batch_size=batch_size),
+                    DatasetTestCase.get_test_data_loader(batch_size=batch_size),
+                ]
+
+                for dataloader in dataloaders:
+                    with self.subTest(dataloader=dataloader):
+                        for image, label in dataloader:
+                            # (N, C, H, W)
+                            # print(image)
+                            self.assertEqual(len(image.shape), 4)
+                            self.assertEqual(image.shape[0], batch_size)
+                            self.assertEqual(image.shape[1], DatasetTestCase.INPUT_CHANNELS)
+                            self.assertEqual(image.shape[2], DatasetTestCase.INPUT_HEIGHT)
+                            self.assertEqual(image.shape[3], DatasetTestCase.INPUT_WIDTH)
+
+                            # (N)
+                            # So we're not using 1-hot encoding here.
+                            # print(label)
+                            self.assertEqual(len(label.shape), 1)
+                            self.assertEqual(label.shape[0], batch_size)
+
+                            break    # Only test 1 set of tensor.
 
 
 if __name__ == '__main__':
