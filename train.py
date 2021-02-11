@@ -18,11 +18,19 @@ import model
 LEARNING_RATE = 1e-4
 N_EPOCHS: typing.Final = 200
 TRAIN_BATCH_SIZE: typing.Final = 1200
-TRAIN_TRANSFORMS: typing.Final = transforms.Compose([transforms.ToTensor()])
+TRAIN_TRANSFORMS: typing.Final = transforms.Compose([
+    transforms.RandomCrop(constant.IMAGE_HEIGHT_WIDTH, padding=(constant.IMAGE_HEIGHT_WIDTH // 8)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 
 # Validation/test
 VAL_BATCH_SIZE: typing.Final = 1200
-VAL_TRANSFORMS: typing.Final = transforms.ToTensor()
+VAL_TRANSFORMS: typing.Final = transforms.Compose([
+    transforms.ToTensor(),
+    # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 VAL_EPOCH_INTERVAL: typing = 1    ; """Validate every 10 epochs."""
 
 
