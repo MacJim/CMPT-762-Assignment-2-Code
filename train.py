@@ -16,26 +16,26 @@ import densenet
 
 # MARK: - Constants
 # Train
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 0.06
 N_EPOCHS: typing.Final = 200
 TRAIN_BATCH_SIZE: typing.Final = 300
 TRAIN_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.RandomCrop(constant.IMAGE_HEIGHT_WIDTH, padding=(constant.IMAGE_HEIGHT_WIDTH // 8)),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
 
 # Validation/test
 VAL_BATCH_SIZE: typing.Final = TRAIN_BATCH_SIZE
 VAL_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.ToTensor(),
-    # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
-VAL_EPOCH_INTERVAL: typing.Final = 10    ; """Validate every 10 epochs."""
+VAL_EPOCH_INTERVAL: typing.Final = 5    ; """Validation epoch interval."""
 
 # Save
-CHECKPOINT_SAVE_EPOCH_INTERVAL: typing.Final = 50    ; """Save checkpoints every 50 epochs."""
+CHECKPOINT_SAVE_EPOCH_INTERVAL: typing.Final = 50    ; """Checkpoints save interval."""
 
 
 # MARK: - Helpers
@@ -85,13 +85,17 @@ def main(checkpoint_save_dir: str):
         raise FileExistsError(f"Checkpoint save dir `{checkpoint_save_dir}` is a file.")
     elif (os.path.isdir(checkpoint_save_dir)):
         print(f"Using existing checkpoint save dir `{checkpoint_save_dir}`.")
-        print(f"Existing checkpoints in this directory will be overwritten.")
+        existing_filenames = os.listdir(checkpoint_save_dir)
+        if existing_filenames:
+            print(f"Existing checkpoints in this directory will be overwritten.")
 
     # MARK: Variables
     network = densenet.DenseNet762()
     network = network.cuda()
 
-    optimizer = optim.Adam(network.parameters(), lr=LEARNING_RATE)
+    # optimizer = optim.Adam(network.parameters(), lr=LEARNING_RATE)
+    optimizer = optim.SGD(network.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=N_EPOCHS)
     loss_function = nn.CrossEntropyLoss()
 
     train_dataset = dataset.CIFAR100_SFU_CV(
@@ -102,7 +106,7 @@ def main(checkpoint_save_dir: str):
     )
     # We need to drop the last mini-batch because we have batch normalizations in our network.
     # If the last batch size is 1, batch norm won't work.
-    train_dataloader = data.DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=4, drop_last=True)
+    train_dataloader = data.DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=2, drop_last=True)
 
     validation_dataset = dataset.CIFAR100_SFU_CV(
         root=constant.DATASET_ROOT_DIR,
@@ -110,7 +114,7 @@ def main(checkpoint_save_dir: str):
         download=True,
         transform=VAL_TRANSFORMS
     )
-    validation_dataloader = data.DataLoader(validation_dataset, batch_size=VAL_BATCH_SIZE, num_workers=4)
+    validation_dataloader = data.DataLoader(validation_dataset, batch_size=VAL_BATCH_SIZE, num_workers=2)
 
     for epoch in range(1, N_EPOCHS + 1):
         # MARK: Train
@@ -137,6 +141,8 @@ def main(checkpoint_save_dir: str):
 
             _, max_prediction_indices = torch.max(prediction, -1)
             train_correct_count += torch.sum(max_prediction_indices == label).item()
+
+        scheduler.step()
 
         train_end_time = time.time()
         train_time = train_end_time - train_start_time
