@@ -1,4 +1,5 @@
 import unittest
+from collections import defaultdict
 
 import torch
 from torch.utils import data
@@ -236,6 +237,25 @@ class DatasetTestCase (unittest.TestCase):
 
         self.assertEqual(label_max_value, 99)
         self.assertEqual(label_min_value, 0)
+
+    def test_test_dataset_label(self):
+        """
+        The test set only contains 0 labels.
+
+        :return:
+        """
+        TEST_LEN = 10000
+
+        test_label_occurrences = defaultdict(int)    # All 0 label
+
+        test_dataloader = DatasetTestCase.get_test_data_loader(batch_size=1)
+        for _, label in test_dataloader:
+            label = torch.reshape(label, (-1,))
+            label = label.item()
+            test_label_occurrences[label] += 1
+
+        print(test_label_occurrences)
+        self.assertEqual(test_label_occurrences, {0: TEST_LEN})
 
 
 if __name__ == '__main__':
