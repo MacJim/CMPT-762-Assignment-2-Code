@@ -10,7 +10,7 @@ import numpy as np
 
 import constant
 import dataset
-import model
+import densenet
 
 
 # MARK: - Constants
@@ -74,7 +74,7 @@ def calculate_val_accuracy(network: nn.Module, val_loader: data.DataLoader, is_g
 
 def main():
     # MARK: Variables
-    network = model.DenseNet762()
+    network = densenet.DenseNet762()
     network = network.cuda()
 
     optimizer = optim.Adam(network.parameters(), lr=LEARNING_RATE)

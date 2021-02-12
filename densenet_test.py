@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from model import DenseNet762
+from densenet import DenseNet762
 from constant import N_CLASSES
 
 
