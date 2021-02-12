@@ -1,6 +1,7 @@
 import time
 import os
 import typing
+import argparse
 
 import torch
 from torch import nn, autograd, optim
@@ -31,7 +32,10 @@ VAL_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.ToTensor(),
     # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
-VAL_EPOCH_INTERVAL: typing = 1    ; """Validate every 10 epochs."""
+VAL_EPOCH_INTERVAL: typing.Final = 10    ; """Validate every 10 epochs."""
+
+# Save
+CHECKPOINT_SAVE_EPOCH_INTERVAL: typing.Final = 50    ; """Save checkpoints every 50 epochs."""
 
 
 # MARK: - Helpers
@@ -72,7 +76,17 @@ def calculate_val_accuracy(network: nn.Module, val_loader: data.DataLoader, is_g
     return 100*correct/total, class_accuracy
 
 
-def main():
+def main(checkpoint_save_dir: str):
+    # MARK: Verify parameters
+    if (not os.path.exists(checkpoint_save_dir)):
+        os.makedirs(checkpoint_save_dir)
+        print(f"Created checkpoint save dir `{checkpoint_save_dir}`.")
+    if (os.path.isfile(checkpoint_save_dir)):
+        raise FileExistsError(f"Checkpoint save dir `{checkpoint_save_dir}` is a file.")
+    elif (os.path.isdir(checkpoint_save_dir)):
+        print(f"Using existing checkpoint save dir `{checkpoint_save_dir}`.")
+        print(f"Existing checkpoints in this directory will be overwritten.")
+
     # MARK: Variables
     network = densenet.DenseNet762()
     network = network.cuda()
@@ -152,9 +166,19 @@ def main():
 
             print(f"Validation: accuracy: {validation_correct_count}/{validation_count} ({validation_correct_count / validation_count}), total loss: {validation_loss}, average loss: {validation_loss / validation_count}")
 
+        # MARK: Save checkpoint
+        if ((epoch % CHECKPOINT_SAVE_EPOCH_INTERVAL) == 0):
+            checkpoint_filename = os.path.join(checkpoint_save_dir, f"{epoch}.pth")
+            torch.save(network.state_dict(), checkpoint_filename)
+            print(f"Checkpoint saved as `{checkpoint_filename}`")
+
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     print(f"Working directory: {os.getcwd()}")
 
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--checkpoint_save_dir", type=str, default="checkpoints")
+    args = parser.parse_args()
+
+    main(args.checkpoint_save_dir)
