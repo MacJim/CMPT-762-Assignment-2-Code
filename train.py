@@ -2,6 +2,7 @@ import time
 import os
 import typing
 import argparse
+import warnings
 
 import torch
 from torch import nn, autograd, optim
@@ -48,6 +49,8 @@ def calculate_val_accuracy(network: nn.Module, val_loader: data.DataLoader, is_g
     Returns:
         tuple: (overall accuracy, class level accuracy)
     """
+    warnings.warn("The original `calculate_val_accuracy` function is no longer used because it's highly unoptimized.", DeprecationWarning)
+
     correct = 0.
     total = 0.
     predictions = []
