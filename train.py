@@ -17,7 +17,7 @@ import model
 # Train
 LEARNING_RATE = 1e-4
 N_EPOCHS: typing.Final = 200
-TRAIN_BATCH_SIZE: typing.Final = 1200
+TRAIN_BATCH_SIZE: typing.Final = 300
 TRAIN_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.RandomCrop(constant.IMAGE_HEIGHT_WIDTH, padding=(constant.IMAGE_HEIGHT_WIDTH // 8)),
     transforms.RandomHorizontalFlip(),
@@ -26,7 +26,7 @@ TRAIN_TRANSFORMS: typing.Final = transforms.Compose([
 ])
 
 # Validation/test
-VAL_BATCH_SIZE: typing.Final = 1200
+VAL_BATCH_SIZE: typing.Final = TRAIN_BATCH_SIZE
 VAL_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.ToTensor(),
     # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -74,7 +74,7 @@ def calculate_val_accuracy(network: nn.Module, val_loader: data.DataLoader, is_g
 
 def main():
     # MARK: Variables
-    network = model.DenseNet(constant.N_CLASSES)
+    network = model.DenseNet762()
     network = network.cuda()
 
     optimizer = optim.Adam(network.parameters(), lr=LEARNING_RATE)
@@ -127,6 +127,7 @@ def main():
         train_end_time = time.time()
         train_time = train_end_time - train_start_time
         print(f"Epoch {epoch}: accuracy: {train_correct_count}/{train_count} ({train_correct_count / train_count}), total loss: {train_loss}, average loss: {train_loss / train_count}, time: {train_time} seconds")
+        del image, label, prediction, loss, max_prediction_indices
 
         # MARK: Validate
         if (epoch % VAL_EPOCH_INTERVAL == 0):
@@ -135,17 +136,19 @@ def main():
             validation_loss = 0.
             validation_count = 0
             validation_correct_count = 0
-            for image, label in validation_dataloader:
-                image = image.cuda()
-                label = label.cuda()
 
-                prediction = network(image)
-                loss = loss_function(prediction, label)
-                validation_loss += loss.item()
-                validation_count += image.shape[0]
+            with torch.no_grad():    # [Very important] Reduce memory usage.
+                for image, label in validation_dataloader:
+                    image = image.cuda()
+                    label = label.cuda()
 
-                _, max_prediction_indices = torch.max(prediction, -1)
-                validation_correct_count += torch.sum(max_prediction_indices == label).item()
+                    prediction = network(image)
+                    loss = loss_function(prediction, label)
+                    validation_loss += loss.item()
+                    validation_count += image.shape[0]
+
+                    _, max_prediction_indices = torch.max(prediction, -1)
+                    validation_correct_count += torch.sum(max_prediction_indices == label).item()
 
             print(f"Validation: accuracy: {validation_correct_count}/{validation_count} ({validation_correct_count / validation_count}), total loss: {validation_loss}, average loss: {validation_loss / validation_count}")
 
