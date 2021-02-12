@@ -5,6 +5,7 @@ import typing
 DATASET_ROOT_DIR: typing.Final = "data/"
 DATASET_TRAIN_SUB_DIR: typing.Final = "train"
 DATASET_VALIDATION_SUB_DIR: typing.Final = "val"
+DATASET_TEST_SUB_DIR: typing.Final = "test"
 
 IMAGE_HEIGHT_WIDTH: typing.Final = 32
 

@@ -6,15 +6,11 @@ from torch.utils import data
 from torchvision import transforms
 
 from dataset import CIFAR100_SFU_CV
+import constant
 
 
 class DatasetTestCase (unittest.TestCase):
     # MARK: - Constants
-    DATASET_ROOT_DIR = "data/"
-    DATASET_TRAIN_SUB_DIR = "train"
-    DATASET_VALIDATION_SUB_DIR = "val"
-    DATASET_TEST_SUB_DIR = "test"
-
     TRAIN_TRANSFORM = transforms.Compose([transforms.ToTensor()])
     TEST_TRANSFORM = transforms.Compose([transforms.ToTensor()])
 
@@ -22,8 +18,8 @@ class DatasetTestCase (unittest.TestCase):
     @staticmethod
     def get_train_dataset() -> data.Dataset:
         return CIFAR100_SFU_CV(
-            root=DatasetTestCase.DATASET_ROOT_DIR,
-            fold=DatasetTestCase.DATASET_TRAIN_SUB_DIR,
+            root=constant.DATASET_ROOT_DIR,
+            fold=constant.DATASET_TRAIN_SUB_DIR,
             download=True,
             transform=DatasetTestCase.TRAIN_TRANSFORM
         )
@@ -31,8 +27,8 @@ class DatasetTestCase (unittest.TestCase):
     @staticmethod
     def get_validation_dataset() -> data.Dataset:
         return CIFAR100_SFU_CV(
-            root=DatasetTestCase.DATASET_ROOT_DIR,
-            fold=DatasetTestCase.DATASET_VALIDATION_SUB_DIR,
+            root=constant.DATASET_ROOT_DIR,
+            fold=constant.DATASET_VALIDATION_SUB_DIR,
             download=True,
             transform=DatasetTestCase.TEST_TRANSFORM
         )
@@ -40,8 +36,8 @@ class DatasetTestCase (unittest.TestCase):
     @staticmethod
     def get_test_dataset() -> data.Dataset:
         return CIFAR100_SFU_CV(
-            root=DatasetTestCase.DATASET_ROOT_DIR,
-            fold=DatasetTestCase.DATASET_TEST_SUB_DIR,
+            root=constant.DATASET_ROOT_DIR,
+            fold=constant.DATASET_TEST_SUB_DIR,
             download=True,
             transform=DatasetTestCase.TEST_TRANSFORM
         )
