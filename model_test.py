@@ -2,18 +2,17 @@ import unittest
 
 import torch
 
-from model import DenseNet
+from model import DenseNet762
+from constant import N_CLASSES
 
 
 class ModelTestCase (unittest.TestCase):
     # MARK: - Test CUDA
-    @unittest.skip
+    # @unittest.skip
     def test_cuda(self):
-        n_classes = 100
-
-        network = DenseNet(n_classes)
+        network = DenseNet762()
         network = network.cuda()
-        # print(network)
+        print(network)
 
     # MARK: - Test calculation using dummy inputs
     INPUT_CHANNELS = 3
@@ -21,8 +20,7 @@ class ModelTestCase (unittest.TestCase):
     INPUT_WIDTH = 32
 
     def test_dummy_value(self):
-        n_classes = 100
-        network = DenseNet(n_classes)
+        network = DenseNet762()
         network = network.cuda()
 
         network.train()
@@ -37,7 +35,7 @@ class ModelTestCase (unittest.TestCase):
                 # Test shape.
                 # print(output.shape)
                 self.assertEqual(output.shape[0], batch_size)
-                self.assertEqual(output.shape[1], n_classes)
+                self.assertEqual(output.shape[1], N_CLASSES)
 
                 # Test sum.
                 # DO NOT include Softmax in the model because `nn.CrossEntropyLoss` includes that.
@@ -55,7 +53,7 @@ class ModelTestCase (unittest.TestCase):
                 # Test shape.
                 # print(output.shape)
                 self.assertEqual(output.shape[0], batch_size)
-                self.assertEqual(output.shape[1], n_classes)
+                self.assertEqual(output.shape[1], N_CLASSES)
 
                 # Test sum.
                 output_sum = torch.sum(output, dim=1)
