@@ -13,12 +13,13 @@ import numpy as np
 import constant
 import dataset
 import densenet
+import epoch_logger
 
 
 # MARK: - Constants
 # Train
 LEARNING_RATE = 0.06
-N_EPOCHS: typing.Final = 200
+N_EPOCHS: typing.Final = 400
 TRAIN_BATCH_SIZE: typing.Final = 300
 TRAIN_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.RandomCrop(constant.IMAGE_HEIGHT_WIDTH, padding=(constant.IMAGE_HEIGHT_WIDTH // 8)),
@@ -33,10 +34,10 @@ VAL_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
-VAL_EPOCH_INTERVAL: typing.Final = 5    ; """Validation epoch interval."""
+VAL_EPOCH_INTERVAL: typing.Final = 1    ; """Validation epoch interval."""
 
 # Save
-CHECKPOINT_SAVE_EPOCH_INTERVAL: typing.Final = 50    ; """Checkpoints save interval."""
+CHECKPOINT_SAVE_EPOCH_INTERVAL: typing.Final = 25    ; """Checkpoints save interval."""
 
 
 # MARK: - Helpers
@@ -79,18 +80,18 @@ def calculate_val_accuracy(network: nn.Module, val_loader: data.DataLoader, is_g
     return 100*correct/total, class_accuracy
 
 
-def main(checkpoint_save_dir: str):
+def main(checkpoint_save_dir: str, train_log_filename: str, validation_log_filename: str):
     # MARK: Verify parameters
     if (not os.path.exists(checkpoint_save_dir)):
         os.makedirs(checkpoint_save_dir)
         print(f"Created checkpoint save dir `{checkpoint_save_dir}`.")
-    if (os.path.isfile(checkpoint_save_dir)):
-        raise FileExistsError(f"Checkpoint save dir `{checkpoint_save_dir}` is a file.")
     elif (os.path.isdir(checkpoint_save_dir)):
         print(f"Using existing checkpoint save dir `{checkpoint_save_dir}`.")
         existing_filenames = os.listdir(checkpoint_save_dir)
         if existing_filenames:
-            print(f"Existing checkpoints in this directory will be overwritten.")
+            print(f"Existing checkpoint files in this directory will be overwritten.")
+    else:
+        raise FileExistsError(f"Checkpoint save dir `{checkpoint_save_dir}` is not a folder.")
 
     # MARK: Variables
     network = densenet.DenseNet762()
@@ -150,10 +151,12 @@ def main(checkpoint_save_dir: str):
         train_end_time = time.time()
         train_time = train_end_time - train_start_time
         print(f"Epoch {epoch}: accuracy: {train_correct_count}/{train_count} ({train_correct_count / train_count}), total loss: {train_loss}, average loss: {train_loss / train_count}, time: {train_time} seconds")
-        del image, label, prediction, loss, max_prediction_indices
+        epoch_logger.log_epoch_details_to_file(epoch, train_count, train_correct_count, (train_correct_count / train_count), train_loss, (train_loss / train_count), train_time, train_log_filename)
 
         # MARK: Validate
         if (epoch % VAL_EPOCH_INTERVAL == 0):
+            validation_start_time = time.time()
+
             network.eval()
 
             validation_loss = 0.
@@ -173,7 +176,10 @@ def main(checkpoint_save_dir: str):
                     _, max_prediction_indices = torch.max(prediction, -1)
                     validation_correct_count += torch.sum(max_prediction_indices == label).item()
 
-            print(f"Validation: accuracy: {validation_correct_count}/{validation_count} ({validation_correct_count / validation_count}), total loss: {validation_loss}, average loss: {validation_loss / validation_count}")
+            validation_end_time = time.time()
+            validation_time = validation_end_time - validation_start_time
+            print(f"Validation: accuracy: {validation_correct_count}/{validation_count} ({validation_correct_count / validation_count}), total loss: {validation_loss}, average loss: {validation_loss / validation_count}, time: {validation_time} seconds")
+            epoch_logger.log_epoch_details_to_file(epoch, validation_count, validation_correct_count, (validation_correct_count / validation_count), validation_loss, (validation_loss / validation_count), validation_time, validation_log_filename)
 
         # MARK: Save checkpoint
         if ((epoch % CHECKPOINT_SAVE_EPOCH_INTERVAL) == 0):
@@ -188,6 +194,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint_save_dir", type=str, default="checkpoints")
+    parser.add_argument("--train_log_filename", type=str, default="checkpoints/train_log.csv")
+    parser.add_argument("--validation_log_filename", type=str, default="checkpoints/validation_log.csv")
     args = parser.parse_args()
 
-    main(args.checkpoint_save_dir)
+    main(args.checkpoint_save_dir, args.train_log_filename, args.validation_log_filename)
