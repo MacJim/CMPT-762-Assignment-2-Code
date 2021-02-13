@@ -61,8 +61,8 @@ if __name__ == '__main__':
     print(f"Working directory: {os.getcwd()}")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint_filename", type=str, default="../762-Assignment-2-Checkpoints/0.3/200.pth")
-    parser.add_argument("--csv_filename", type=str, default="predictions.csv")
+    parser.add_argument("--checkpoint_filename", type=str, default="../762-Assignment-2-Checkpoints/0.4-128batch/400.pth")
+    parser.add_argument("--csv_filename", type=str, default="0.4-128batch-predictions.csv")
     args = parser.parse_args()
 
     main(args.checkpoint_filename, args.csv_filename)
