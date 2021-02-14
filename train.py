@@ -19,8 +19,6 @@ import epoch_logger
 # MARK: - Constants
 # Train
 LEARNING_RATE = 0.06
-N_EPOCHS: typing.Final = 400
-TRAIN_BATCH_SIZE: typing.Final = 300
 TRAIN_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.RandomCrop(constant.IMAGE_HEIGHT_WIDTH, padding=(constant.IMAGE_HEIGHT_WIDTH // 8)),
     transforms.RandomHorizontalFlip(),
@@ -29,7 +27,7 @@ TRAIN_TRANSFORMS: typing.Final = transforms.Compose([
 ])
 
 # Validation/test
-VAL_BATCH_SIZE: typing.Final = TRAIN_BATCH_SIZE
+VAL_BATCH_SIZE: typing.Final = 300
 VAL_TRANSFORMS: typing.Final = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -80,7 +78,7 @@ def calculate_val_accuracy(network: nn.Module, val_loader: data.DataLoader, is_g
     return 100*correct/total, class_accuracy
 
 
-def main(checkpoint_save_dir: str, train_log_filename: str, validation_log_filename: str):
+def main(train_batch_size: int, n_epochs: int, checkpoint_save_dir: str, train_log_filename: str, validation_log_filename: str):
     # MARK: Verify parameters
     if (not os.path.exists(checkpoint_save_dir)):
         os.makedirs(checkpoint_save_dir)
@@ -99,7 +97,7 @@ def main(checkpoint_save_dir: str, train_log_filename: str, validation_log_filen
 
     # optimizer = optim.Adam(network.parameters(), lr=LEARNING_RATE)
     optimizer = optim.SGD(network.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=N_EPOCHS)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_epochs)
     loss_function = nn.CrossEntropyLoss()
 
     train_dataset = dataset.CIFAR100_SFU_CV(
@@ -110,7 +108,7 @@ def main(checkpoint_save_dir: str, train_log_filename: str, validation_log_filen
     )
     # We need to drop the last mini-batch because we have batch normalizations in our network.
     # If the last batch size is 1, batch norm won't work.
-    train_dataloader = data.DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=2, drop_last=True)
+    train_dataloader = data.DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, num_workers=2, drop_last=True)
 
     validation_dataset = dataset.CIFAR100_SFU_CV(
         root=constant.DATASET_ROOT_DIR,
@@ -120,7 +118,7 @@ def main(checkpoint_save_dir: str, train_log_filename: str, validation_log_filen
     )
     validation_dataloader = data.DataLoader(validation_dataset, batch_size=VAL_BATCH_SIZE, num_workers=2)
 
-    for epoch in range(1, N_EPOCHS + 1):
+    for epoch in range(1, n_epochs + 1):
         # MARK: Train
         train_start_time = time.time()
 
@@ -193,9 +191,11 @@ if __name__ == '__main__':
     print(f"Working directory: {os.getcwd()}")
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--train_batch_size", type=int, default=128)
+    parser.add_argument("--n_epochs", type=int, default=400)
     parser.add_argument("--checkpoint_save_dir", type=str, default="checkpoints")
     parser.add_argument("--train_log_filename", type=str, default="checkpoints/train_log.csv")
     parser.add_argument("--validation_log_filename", type=str, default="checkpoints/validation_log.csv")
     args = parser.parse_args()
 
-    main(args.checkpoint_save_dir, args.train_log_filename, args.validation_log_filename)
+    main(args.train_batch_size, args.n_epochs, args.checkpoint_save_dir, args.train_log_filename, args.validation_log_filename)
