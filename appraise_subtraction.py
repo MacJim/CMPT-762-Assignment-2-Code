@@ -106,9 +106,11 @@ if __name__ == '__main__':
     print(f"Working directory: {os.getcwd()}")
 
     checkpoint_filenames = [
+        "../762-Assignment-2-Checkpoints/0.4-32batch/400.pth",
         "../762-Assignment-2-Checkpoints/0.4-64batch/400.pth",
         "../762-Assignment-2-Checkpoints/0.4-96batch/400.pth",
         "../762-Assignment-2-Checkpoints/0.4-128batch/400.pth",
+        "../762-Assignment-2-Checkpoints/0.4-160batch/400.pth",
         "../762-Assignment-2-Checkpoints/0.4-300batch/400.pth",
     ]
 
